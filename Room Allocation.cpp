@@ -1,37 +1,76 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
-
+#include <set>
 using namespace std;
 
-struct customer{
-    int checkIn, checkOut, index, roomNumber;
+struct customer {
+    int checkIn, checkOut, roomNumber;
 };
 
-int main(){
-
+int main() {
     int n;
     cin >> n;
-    cin.ignore();
-    
     vector<customer> customers(n);
-    for(int i = 0; i < n; i++){
+    
+    // Read input
+    for(int i = 0; i < n; i++) {
         cin >> customers[i].checkIn >> customers[i].checkOut;
-        customers[i].index = i; // necesary??
-        cin.ignore();
+        customers[i].roomNumber = 0;
     }
-
+    
+    // Create index vector for sorting
     vector<int> orderCustomers(n);
-    for(int i = 0; i < n; i++){orderCustomers[i] = i;}
-    sort(orderCustomers.begin(), orderCustomers.end(), [&customers](int a, int b){
-        if(customers[a].checkIn == customers[b].checkIn){
+    for(int i = 0; i < n; i++) {
+        orderCustomers[i] = i;
+    }
+    
+    // Sort by check-in time, then check-out time
+    sort(orderCustomers.begin(), orderCustomers.end(), [&customers](int a, int b) {
+        if(customers[a].checkIn == customers[b].checkIn) {
             return customers[a].checkOut < customers[b].checkOut;
         }
         return customers[a].checkIn < customers[b].checkIn;
     });
-
-
-
+    
+    // Keep track of when each room becomes available
+    vector<pair<int, int>> roomAvailability;  // {checkout time, room number}
+    int nextRoom = 1;
+    
+    // Process each customer
+    for(int i = 0; i < n; i++) {
+        int idx = orderCustomers[i];
+        bool foundRoom = false;
+        
+        // Check all available rooms
+        for(auto& room : roomAvailability) {
+            if(room.first < customers[idx].checkIn) {
+                // Can reuse this room
+                customers[idx].roomNumber = room.second;
+                room.first = customers[idx].checkOut;
+                foundRoom = true;
+                break;
+            }
+        }
+        
+        // If no existing room can be reused, create new room
+        if(!foundRoom) {
+            customers[idx].roomNumber = nextRoom;
+            roomAvailability.push_back({customers[idx].checkOut, nextRoom});
+            nextRoom++;
+        }
+        
+        // Sort rooms by checkout time for next iteration
+        sort(roomAvailability.begin(), roomAvailability.end());
+    }
+    
+    // Output results
+    cout << roomAvailability.size() << endl;
+    for(int i = 0; i < n-1; i++) {
+        cout << customers[i].roomNumber << " ";
+    }
+    cout << customers[n-1].roomNumber << endl;
+    
     return 0;
 }
 
