@@ -26,7 +26,7 @@ int main() {
     }
     
     // Sort by check-in time, then check-out time
-    sort(orderCustomers.begin(), orderCustomers.end(), [&customers](int a, int b) {
+    sort(orderCustomers.begin(), orderCustomers.end(), [&customers](int a, int b){
         if(customers[a].checkIn == customers[b].checkIn) {
             return customers[a].checkOut < customers[b].checkOut;
         }
@@ -34,38 +34,35 @@ int main() {
     });
     
     // Keep track of when each room becomes available
-    vector<pair<int, int>> roomAvailability;  // {checkout time, room number}
-    int nextRoom = 1;
+    set<pair<int, int>> availableRooms;
+    int nextRoom = 2;
+    int idx = orderCustomers[0];
+
+    // first customer gets room number 1, then we dont have to handle case this set is empty..
+    customers[idx].roomNumber = 1;
+    availableRooms.insert({customers[idx].checkOut, 1});
     
     // Process each customer
-    for(int i = 0; i < n; i++) {
-        int idx = orderCustomers[i];
-        bool foundRoom = false;
+    for(int i = 1; i < n; i++) {
+        idx = orderCustomers[i];
         
-        // Check all available rooms
-        for(auto& room : roomAvailability) {
-            if(room.first < customers[idx].checkIn) {
-                // Can reuse this room
-                customers[idx].roomNumber = room.second;
-                room.first = customers[idx].checkOut;
-                foundRoom = true;
-                break;
-            }
+        // Check for available room
+        auto it = availableRooms.begin();
+        if(it->first < customers[idx].checkIn){
+            customers[idx].roomNumber = it->second;
+            availableRooms.erase(it);
+            availableRooms.insert({customers[idx].checkOut, customers[idx].roomNumber});
         }
-        
         // If no existing room can be reused, create new room
-        if(!foundRoom) {
+        else{
             customers[idx].roomNumber = nextRoom;
-            roomAvailability.push_back({customers[idx].checkOut, nextRoom});
+            availableRooms.insert({customers[idx].checkOut, nextRoom});
             nextRoom++;
         }
-        
-        // Sort rooms by checkout time for next iteration
-        sort(roomAvailability.begin(), roomAvailability.end());
     }
     
     // Output results
-    cout << roomAvailability.size() << endl;
+    cout << availableRooms.size() << endl;
     for(int i = 0; i < n-1; i++) {
         cout << customers[i].roomNumber << " ";
     }
