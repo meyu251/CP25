@@ -5,26 +5,29 @@
 using namespace std;
 
 int main(){
-    // Read input
-    int n, x;  // n = number of coins, x = target sum
+    int n, x;
     cin >> n >> x;
-    vector<int> coins(n);  // stores coin denominations
+    vector<int> coins(n);
     for(int i = 0; i < n; i++){
         cin >> coins[i];
     }
-    sort(coins.begin(), coins.end());  // sort coins for easier processing
+    sort(coins.begin(), coins.end());
 
-    // Initialize DP table
-    // dp[i][j] = minimum coins needed to make sum j using first i+1 coins
-    // dp[i][j] = -1 if sum j cannot be formed using first i+1 coins
-    vector<vector<int>> dp(n, vector<int>(x+1, -1));
+    if (coins[0] > x) {
+        cout << -1 << endl;
+        return 0;
+    }
 
-    // Base case: Handle first coin
+    vector<int> dp(x+1, -1);
     int currCoin = coins[0], tmp, value1, value2;
-    dp[0][currCoin] = 1;  // can make sum = currCoin using 1 coin
+
+    // Handle first coin
+    dp[currCoin] = 1;  // can make sum = currCoin using 1 coin
     // Fill remaining sums using only first coin
     for(int j = currCoin+1; j <= x; j++){
-        dp[0][j] = dp[0][j-currCoin] + 1;  // propagate solution if possible
+        if(dp[j-currCoin] != -1){
+            dp[j] = dp[j-currCoin] + 1;  // propagate solution if possible
+        }
     }
 
     // Fill DP table for remaining coins
@@ -35,40 +38,39 @@ int main(){
             // Case 1: Current sum is less than coin value
             // Can only use solution without current coin
             if(j < currCoin){
-                dp[i][j] = dp[i-1][j];
                 continue;
             }
 
             // Case 2: Sum equals current coin value
             // Can make it using just one coin
             if(j == currCoin){
-                dp[i][j] = 1;
+                dp[j] = 1;
                 continue;
             }
 
             // Case 3: Sum > coin value
             // Try both options: use current coin or don't use it
-            value1 = dp[i-1][j];         // don't use current coin
-            value2 = dp[i][j-currCoin];  // use current coin
+            value1 = dp[j];         // don't use current coin
+            value2 = dp[j-currCoin];  // use current coin
 
             // Handle all possible combinations of valid/invalid (-1) values
             if(value1 == -1 && value2 == -1){
-                dp[i][j] = -1;  // no valid solution exists
+                dp[j] = -1;  // no valid solution exists
             }
             else if(value1 == -1){
-                dp[i][j] = value2 + 1;  // only solution using current coin is valid
+                dp[j] = value2 + 1;  // only solution using current coin is valid
             }
             else if(value2 == -1){
-                dp[i][j] = value1 + 1;  // only solution without current coin is valid
+                dp[j] = value1;  // only solution without current coin is valid
             }
             else{
-                dp[i][j] = min(value1, value2 + 1);  // take minimum of both valid solutions
+                dp[j] = min(value1, value2 + 1);  // take minimum of both valid solutions
             }
         }
     }
 
     // Final answer is in dp[n-1][x]
-    cout << dp[n-1][x] << endl;
+    cout << dp[x] << endl;
 
     return 0;
 }
